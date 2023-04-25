@@ -1,0 +1,46 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+#define BUFFER_SIZE 1024
+
+int main(void) {
+    char buffer[BUFFER_SIZE];
+    pid_t pid;
+    int status;
+
+    while (1) {
+        printf("$ ");
+        fflush(stdout);
+
+        // read a line of input from the user
+        if (!fgets(buffer, BUFFER_SIZE, stdin)) {
+            break;  // end of file (Ctrl+D)
+        }
+
+        // remove the trailing newline character
+        buffer[strcspn(buffer, "\n")] = '\0';
+
+        // fork a child process
+        pid = fork();
+
+        if (pid == -1) {
+            perror("fork");
+            exit(EXIT_FAILURE);
+        } else if (pid == 0) {
+            // child process
+            execlp(buffer, buffer, NULL);
+
+            // if execlp returns, it must have failed
+            printf("Command not found: %s\n", buffer);
+            exit(EXIT_FAILURE);
+        } else {
+            // parent process
+            waitpid(pid, &status, 0);
+        }
+    }
+
+    return 0;
+}
+
